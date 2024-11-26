@@ -44,51 +44,53 @@ module.exports.getMyWorkouts = async (req, res) => {
 
 // Update a workout
 module.exports.updateWorkout = async (req, res) => {
-    try {
-        let workoutUpdates = {
-            name: req.body.name,
-            duration: req.body.duration,
-            status: req.body.status ?? 'pending'
-        };
+    const { id } = req.params;
+    const { name, duration, status } = req.body;
 
-        return await Workout.findByIdAndUpdate(req.params.id, workoutUpdates, { new: true }) // Add { new: true }
-            .then(updatedWorkout => {
-                return res.status(200).send({ 
-                    message: 'Workout updated successfully', 
-                    updatedWorkout: updatedWorkout 
-                });
-            })
-            .catch(err => {
-                console.error("Error in updating a Workout:", err);
-                return res.status(500).send({ error: 'Error in updating a Workout.' });
-            });
-    } catch (err) {
-        console.error('Error updating workout:', err);
-        res.status(500).json({ message: 'Server error' });
+    if (!id) {
+        return res.status(400).json({ message: 'Workout ID is required' });
+    }
+
+    const workoutUpdates = {
+        name,
+        duration,
+        status: status ?? 'pending',
+    };
+
+    try {
+        const updatedWorkout = await Workout.findByIdAndUpdate(id, workoutUpdates, { new: true });
+        if (!updatedWorkout) {
+            return res.status(404).json({ message: 'Workout not found' });
+        }
+        res.status(200).json({
+            message: 'Workout updated successfully',
+            updatedWorkout: updatedWorkout 
+        });
+    } catch (error) {
+        handleError(res, 'Error updating workout', error);
     }
 };
-
 
 // Delete a workout
 module.exports.deleteWorkout = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    if (!id) {
+        return res.status(400).json({ message: 'Workout ID is required' });
+    }
+
     try {
-        const { id } = req.params;
-        const userId = req.user.id;  // Assuming the `verify` middleware adds the user data to `req.user`
-
-        if (!id) {
-            return res.status(400).json({ message: 'Workout ID is required' });
+        const deletedWorkout = await Workout.findOneAndDelete({ _id: id, userId });
+        if (!deletedWorkout) {
+            return res.status(404).json({ message: 'Workout not found or unauthorized action' });
         }
-
-        await Workout.findOneAndDelete({ _id: req.params.id, userId });
-
-        return res.status(200).send({ 
-            message: 'Workout deleted successfully'
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(200).json({ message: 'Workout deleted successfully' });
+    } catch (error) {
+        handleError(res, 'Error deleting workout', error);
     }
 };
+
 
 
 // Update the status of a workout (Complete workout)
