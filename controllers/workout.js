@@ -69,22 +69,25 @@ module.exports.updateWorkout = async (req, res) => {
 
 
 // Delete a workout
-module.exports.deleteWorkout = (req, res) => {
+module.exports.deleteWorkout = async (req, res) => {
     try {
-        return Workout.deleteOne({ _id: req.params.id})
-        .then(deletedResult => {
+        const { id } = req.params;
+        const userId = req.user.id;  // Assuming the `verify` middleware adds the user data to `req.user`
 
-            return res.status(200).send({ 
-                message: 'Workout deleted successfully'
-            });
-    
-        })
-        .catch(err => {
-            console.error("Error in deleting an Workout : ", err)
-            return res.status(500).send({ error: 'Error in deleting an Item.' });
+        if (!id) {
+            return res.status(400).json({ message: 'Workout ID is required' });
+        }
+
+        const workout = await Workout.findOneAndDelete({ _id: req.params.id, userId });
+        if (!workout) {
+            return res.status(404).json({ message: 'Workout not found' });
+        }
+
+        return res.status(200).send({ 
+            message: 'Workout deleted successfully'
         });
     } catch (err) {
-        console.error('Error deleting workout:', err);
+        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 };
