@@ -47,7 +47,8 @@ module.exports.updateWorkout = async (req, res) => {
     try {
         let workoutUpdates = {
             name: req.body.name,
-            duration: req.body.duration
+            duration: req.body.duration,
+            status: req.body.status ?? 'pending'
         };
 
         return await Workout.findByIdAndUpdate(req.params.id, workoutUpdates, { new: true }) // Add { new: true }
@@ -78,10 +79,7 @@ module.exports.deleteWorkout = async (req, res) => {
             return res.status(400).json({ message: 'Workout ID is required' });
         }
 
-        const workout = await Workout.findOneAndDelete({ _id: req.params.id, userId });
-        if (!workout) {
-            return res.status(404).json({ message: 'Workout not found' });
-        }
+        await Workout.findOneAndDelete({ _id: req.params.id, userId });
 
         return res.status(200).send({ 
             message: 'Workout deleted successfully'
