@@ -43,26 +43,24 @@ module.exports.getMyWorkouts = async (req, res) => {
 };
 
 // Update a workout
-module.exports.updateWorkout = (req, res) => {
+module.exports.updateWorkout = async (req, res) => {
     try {
         let workoutUpdates = {
             name: req.body.name,
-            quantity: req.body.duration
-        }
-    
-        return Workout.findByIdAndUpdate(req.params.id, workoutUpdates)
-        .then(updatedWorkout => {
+            duration: req.body.duration
+        };
 
-            return res.status(200).send({ 
-                message: 'Workout updated successfully', 
-                updatedWorkout: updatedWorkout 
+        return await Workout.findByIdAndUpdate(req.params.id, workoutUpdates, { new: true }) // Add { new: true }
+            .then(updatedWorkout => {
+                return res.status(200).send({ 
+                    message: 'Workout updated successfully', 
+                    updatedWorkout: updatedWorkout 
+                });
+            })
+            .catch(err => {
+                console.error("Error in updating a Workout:", err);
+                return res.status(500).send({ error: 'Error in updating a Workout.' });
             });
-    
-        })
-        .catch(err => {
-            console.error("Error in updating an Workout : ", err)
-            return res.status(500).send({ error: 'Error in updating an Item.' });
-        });
     } catch (err) {
         console.error('Error updating workout:', err);
         res.status(500).json({ message: 'Server error' });
