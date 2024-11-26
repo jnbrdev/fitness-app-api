@@ -9,7 +9,14 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use(cors());
+const corsOptions = {
+    origin: [`http://localhost:8000`, 
+        'http://localhost:3000', 
+        'https://fitness-app-api-l2sk.onrender.com'],
+    credentials: true, 
+    optionsSuccessStatus:200 
+};
+app.use(cors(corsOptions));
 
 //MongoDB database
 mongoose.connect("mongodb+srv://admin:admin123@wdc028-b461.c4soc.mongodb.net/fitness-app-API?retryWrites=true&w=majority&appName=WDC028-B461");
