@@ -5,20 +5,15 @@ module.exports.addWorkout = async (req, res) => {
     try {
         const { name, duration} = req.body;
         const userId = req.user.id;
-        const status = 'pending'
-        if (!name || !duration || !status) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
 
-        const newWorkout = new Workout({
+        const workouts = new Workout({
             userId,
             name,
-            duration,
-            status
+            duration
         });
 
-        await newWorkout.save();
-        res.status(201).json(newWorkout );
+        await workouts.save();
+        res.status(201).json(workouts);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -31,9 +26,6 @@ module.exports.getMyWorkouts = async (req, res) => {
         const userId = req.user.id;
 
         const workouts = await Workout.find({ userId });
-        if (!workouts || workouts.length === 0) {
-            return res.status(404).json({ message: 'No workouts found' });
-        }
 
         res.status(200).json(workouts);
     } catch (err) {
@@ -42,52 +34,62 @@ module.exports.getMyWorkouts = async (req, res) => {
     }
 };
 
+const handleError = (res, message, error, statusCode = 500) => {
+    console.error(message, error);
+    res.status(statusCode).json({ message });
+};
+
+// Update a workout
+// Delete a workout
 // Update a workout
 module.exports.updateWorkout = async (req, res) => {
-    const { id } = req.params;
-    const { name, duration, status } = req.body;
-
-    if (!id) {
-        return res.status(400).json({ message: 'Workout ID is required' });
-    }
-
-    const workoutUpdates = {
-        name,
-        duration,
-        status: status ?? 'pending',
-    };
-
     try {
-        const updatedWorkout = await Workout.findByIdAndUpdate(id, workoutUpdates, { new: true });
-        if (!updatedWorkout) {
-            return res.status(404).json({ message: 'Workout not found' });
+        const { id } = req.params;
+        const userId = req.user.id;
+        const updatedData = req.body;
+
+        // Find the workout by ID and ensure the userId matches
+        const workout = await Workout.findOne({ _id: id, userId: userId });
+
+        // If no workout is found or it doesn't belong to the user, return an error
+        if (!workout) {
+            return res.status(404).json({ success: false, message: "Workout not found or you are not authorized to update it" });
         }
-        res.status(200).json({
-            message: 'Workout updated successfully',
-            updatedWorkout: updatedWorkout 
-        });
+
+        // Update the workout with the provided data
+        Object.assign(workout, updatedData);
+        await workout.save();
+
+        // Respond with the updated workout data
+        res.status(200).json({ message: 'Workout updated successfully', updatedWorkout: workout });
     } catch (error) {
-        handleError(res, 'Error updating workout', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
+
+
 // Delete a workout
 module.exports.deleteWorkout = async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    if (!id) {
-        return res.status(400).json({ message: 'Workout ID is required' });
-    }
-
     try {
-        const deletedWorkout = await Workout.findOneAndDelete({ _id: id, userId });
-        if (!deletedWorkout) {
-            return res.status(404).json({ message: 'Workout not found or unauthorized action' });
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        // Find the workout by ID and ensure the userId matches
+        const workout = await Workout.findOne({ _id: id, userId: userId });
+        
+        // If no workout is found or it doesn't belong to the user, return an error
+        if (!workout) {
+            return res.status(404).json({ success: false, message: "Workout not found or you are not authorized to delete it" });
         }
-        res.status(200).json({ message: 'Workout deleted successfully' });
+
+        // Delete the workout
+        await workout.remove();
+        
+        // Respond with success message
+        res.status(200).json({ message: "Workout deleted successfully" });
     } catch (error) {
-        handleError(res, 'Error deleting workout', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -99,10 +101,6 @@ module.exports.completeWorkoutStatus = async (req, res) => {
         const status = 'completed';
         const id  = req.params.id;
         const userId = req.user.id; 
-
-        if (!id || !status) {
-            return res.status(400).json({ message: 'Workout ID and status are required' });
-        }
 
         const workout = await Workout.findOne({ _id: id, userId });
         if (!workout) {
