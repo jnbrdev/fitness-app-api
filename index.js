@@ -12,7 +12,10 @@ app.use(express.urlencoded({extended:true}));
 const corsOptions = {
     origin: [`http://localhost:8000`, 
         'http://localhost:3000', 
-        'https://fitness-app-api-l2sk.onrender.com'],
+        'https://fitness-app-api-l2sk.onrender.com',
+        'https://fitness-app-frontend-snowy.vercel.app',
+        'https://fitness-app-frontend-np1jrqgw5-jnbrdevs-projects.vercel.app'
+    ],
     credentials: true, 
     optionsSuccessStatus:200 
 };
