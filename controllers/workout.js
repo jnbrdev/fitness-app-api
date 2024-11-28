@@ -5,28 +5,31 @@ module.exports.addWorkout = async (req, res) => {
     try {
         const { name, duration} = req.body;
         const userId = req.user.id;
-
-        const workouts = new Workout({
+        const status = 'pending'
+        if (!name || !duration || !status) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        const newWorkout = new Workout({
             userId,
             name,
-            duration
+            duration,
+            status
         });
-
-        await workouts.save();
-        res.status(201).json(workouts);
+        await newWorkout.save();
+        res.status(201).json(newWorkout );
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 // Get all workouts for a user
 module.exports.getMyWorkouts = async (req, res) => {
     try {
         const userId = req.user.id;
-
         const workouts = await Workout.find({ userId });
-
+        if (!workouts || workouts.length === 0) {
+            return res.status(404).json({ message: 'No workouts found' });
+        }
         res.status(200).json(workouts);
     } catch (err) {
         console.error(err);
