@@ -86,8 +86,8 @@ module.exports.deleteWorkout = async (req, res) => {
             return res.status(404).json({ success: false, message: "Workout not found or you are not authorized to delete it" });
         }
 
-        // Delete the workout
-        await workout.remove();
+        // Delete the workout using the correct method
+        await Workout.findByIdAndDelete(id);  // Alternative: use `deleteOne({ _id: id })`
         
         // Respond with success message
         res.status(200).json({ message: "Workout deleted successfully" });
@@ -95,6 +95,7 @@ module.exports.deleteWorkout = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
 
 
 
