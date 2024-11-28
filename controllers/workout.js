@@ -6,7 +6,7 @@ module.exports.addWorkout = async (req, res) => {
         const { name, duration} = req.body;
         const userId = req.user.id;
         const status = 'pending'
-        if (!name || !duration || !status) {
+        if (!name || !duration) {
             return res.status(400).json({ message: 'All fields are required' });
         }
         const newWorkout = new Workout({
